@@ -1,0 +1,33 @@
+# Python файлы окружения
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.env
+
+# Среда разработки
+.venv/
+env/
+venv/
+ENV/
+*.egg-info/
+.idea/  # PyCharm
+*.db
+
+# Логи
+*.log
+
+# Jupyter Notebook checkpoint files (если используется)
+.ipynb_checkpoints/
+
+# Секретные файлы и ключи
+*.env
+.env
+
+
+.localtunnel
+ngrok.log
+
+
+.DS_Store
+Thumbs.db
