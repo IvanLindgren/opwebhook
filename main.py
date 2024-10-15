@@ -8,13 +8,13 @@ import os
 
 app = Flask(__name__)
 
-# Настройка базы данных SQLite
+# Setting up the database (PostgreSQL for Render)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./notifications.db")
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
-# Определение модели для хранения уведомлений
+# Defining the model to store notifications
 class Notification(Base):
     __tablename__ = "notifications"
     id = Column(Integer, primary_key=True, index=True)
@@ -22,10 +22,10 @@ class Notification(Base):
     data = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-# Создание таблицы уведомлений
+# Create the notifications table
 Base.metadata.create_all(bind=engine)
 
-# Функция для сохранения уведомления в базе данных
+# Function to save notification to the database
 def save_notification(event_type, data):
     session = SessionLocal()
     notification = Notification(event_type=event_type, data=json.dumps(data))
@@ -33,15 +33,15 @@ def save_notification(event_type, data):
     session.commit()
     session.close()
 
-# Основной обработчик вебхуков
+# Main webhook handler
 @app.route("/webhook", methods=["POST"])
 def webhook_listener():
     try:
-        # Получение данных из запроса
+        # Get the data from the request
         data = request.get_json()
         event_type = data.get("action", "unknown_event")
 
-        # Сохранение данных в базу
+        # Save the data to the database
         save_notification(event_type, data)
 
         return jsonify({"status": "success", "message": "Notification saved"}), 200
@@ -49,9 +49,9 @@ def webhook_listener():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-# Функции для работы с уведомлениями в базе данных
+# Functions to interact with notifications in the database
 
-# Получение всех уведомлений
+# Get all notifications
 def get_all_notifications():
     session = SessionLocal()
     notifications = session.query(Notification).all()
@@ -61,7 +61,7 @@ def get_all_notifications():
         for n in notifications
     ]
 
-# Получение уведомлений по типу события
+# Get notifications by event type
 def get_notifications_by_type(event_type):
     session = SessionLocal()
     notifications = session.query(Notification).filter(Notification.event_type == event_type).all()
@@ -71,7 +71,7 @@ def get_notifications_by_type(event_type):
         for n in notifications
     ]
 
-# Получение уведомления по ID
+# Get notification by ID
 def get_notification_by_id(notification_id):
     session = SessionLocal()
     notification = session.query(Notification).filter(Notification.id == notification_id).first()
@@ -86,4 +86,4 @@ def get_notification_by_id(notification_id):
     return None
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
