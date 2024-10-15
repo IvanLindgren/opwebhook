@@ -4,11 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import json
+import os
 
 app = Flask(__name__)
 
 # Настройка базы данных SQLite
-DATABASE_URL = "sqlite:///./notifications.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./notifications.db")
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -16,7 +17,6 @@ Base = declarative_base()
 # Определение модели для хранения уведомлений
 class Notification(Base):
     __tablename__ = "notifications"
-
     id = Column(Integer, primary_key=True, index=True)
     event_type = Column(String, index=True)
     data = Column(Text)
