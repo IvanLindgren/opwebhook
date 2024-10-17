@@ -14,7 +14,7 @@ import threading
 ID = 0
 users_data = {}
 
-bot = telebot.TeleBot('7754833119:AAEIUSMefzMu2fR88kptn4MxD2N7h4vY57c')
+bot = telebot.TeleBot('')
 
 @bot.message_handler(commands=['start', 'hello '])  # кнопки у сообщения бота
 def main(message):
