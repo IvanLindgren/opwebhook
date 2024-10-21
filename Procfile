@@ -1,1 +1,1 @@
-web: python main.py
+web: gunicorn Backend:app & python Frontend.py
