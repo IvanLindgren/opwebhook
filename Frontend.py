@@ -263,12 +263,6 @@ def periodic_check():
                 for n in noti_arr:
                     message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
                     bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-
-            elif data['type_of_notification'] == 'id':
-                n = Backend.get_notification_by_id(ID)
-                message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-            
             else:
                 pass
 
