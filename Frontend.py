@@ -14,9 +14,24 @@ import threading
 # Глобальные переменные
 ID = 0
 users_data = {}  # Словарь для хранения данных пользователей
-
 # Инициализация бота
 bot = telebot.TeleBot('', skip_pending=True)
+
+# Функция для сохранения данных пользователей в файл .json
+def save_users_data():
+    with open('users_data.json', 'w') as f:
+        json.dump(users_data, f)
+
+# Функция для загрузки данных пользователей из файла .json
+def load_users_data():
+    global users_data
+    if os.path.exists('users_data.json'):
+        with open('users_data.json', 'r') as f:
+            users_data = json.load(f)
+
+# Загрузка данных пользователей при старте бота
+load_users_data()
+
 
 # Обработчик команд /start и /hello
 @bot.message_handler(commands=['start', 'hello '])
@@ -46,6 +61,8 @@ def begin(callback):
             'chat_id': chat_id,
             'type_of_notification': 'all'
         }
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         bot.send_message(callback.message.chat.id,
                          f'☑️ По умолчанию вам будут приходить <b>все</b> уведомления!',
                          parse_mode='HTML')
@@ -85,6 +102,8 @@ def stop(callback):
         'chat_id': chat_id,
         'type_of_notification': callback.data
     }
+    with open("users_data.json", "w") as f:
+        json.dump(users_data, f)
 
 # Обработчик для callback 'all'
 @bot.callback_query_handler(func=lambda callback: callback.data == 'all')
@@ -95,6 +114,8 @@ def all(callback):
             'chat_id': chat_id,
             'type_of_notification': callback.data
         }
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         markup = types.InlineKeyboardMarkup()
         btn7 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
 
@@ -132,7 +153,8 @@ def task(callback):
             'chat_id': chat_id,
             'type_of_notification': 'task'
         }
-
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         markup = types.InlineKeyboardMarkup()
         btn11 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
         markup.row(btn11)
@@ -151,7 +173,8 @@ def milestone(callback):
             'chat_id': chat_id,
             'type_of_notification': callback.data
         }
-
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         markup = types.InlineKeyboardMarkup()
         btn12 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
         markup.row(btn12)
@@ -170,7 +193,8 @@ def phase(callback):
             'chat_id': chat_id,
             'type_of_notification': callback.data
         }
-
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         markup = types.InlineKeyboardMarkup()
         btn13 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
         markup.row(btn13)
@@ -244,7 +268,7 @@ def periodic_check():
                 noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
                 for n in noti_arr:
                     message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                                        bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
                     
             elif data['type_of_notification'] == 'milestone':
                 noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
@@ -265,7 +289,6 @@ def periodic_check():
                     bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
             else:
                 pass
-
         time.sleep(60)
 
 if __name__ == '__main__':
