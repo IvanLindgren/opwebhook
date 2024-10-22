@@ -27,12 +27,25 @@ def save_users_data():
 def load_users_data():
     global users_data
     if os.path.exists('users_data.json'):
-        with open('users_data.json', 'r') as f:
-            users_data = json.load(f)
+        try:
+            with open('users_data.json', 'r') as f:
+                users_data = json.load(f)
+        except Exception:
+            # Если файл пустой или некорректен, оставляем пустой словарь
+            users_data = {}
+
+def send_test_message():
+    for user_id, data in users_data.items():
+        try:
+            chat_id = data.get("chat_id")
+            if chat_id:
+                bot.send_message(chat_id, "Это тестовое сообщение. Бот успешно запущен!", parse_mode='HTML')
+        except Exception as e:
+            print(f"Ошибка при отправке сообщения пользователю {user_id}: {str(e)}")
 
 # Загрузка данных пользователей при старте бота
 load_users_data()
-
+send_test_message()
 
 # Обработчик команд /start и /hello
 @bot.message_handler(commands=['start', 'hello '])
