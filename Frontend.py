@@ -14,8 +14,9 @@ import threading
 # Глобальные переменные
 ID = 0
 users_data = {}  # Словарь для хранения данных пользователей
-# Инициализация бота
-bot = telebot.TeleBot(os.getenv("TELEGRAM_BOT_TOKEN"), skip_pending=True)
+
+from bot import bot
+
 
 # Функция для сохранения данных пользователей в файл .json
 def save_users_data():

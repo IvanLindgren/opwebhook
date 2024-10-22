@@ -5,8 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import json
 import os
-from Frontend import bot
-
+from bot import bot
 
 app = Flask(__name__)
 
