@@ -1,64 +1,21 @@
 # Импортируем необходимые библиотеки
 import telebot
+import webbrowser
+import sqlite3
+import re
 import Backend
-from flask import Flask, request, jsonify
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from flask import *
 import json
 import os
-import asyncio
-
-# Инициализация приложения Flask
-app = Flask(__name__)
-
-# Настройка базы данных PostgreSQL для Render
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./notifications.db")
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
-
-# Определение модели для хранения уведомлений
-class Notification(Base):
-    __tablename__ = "notifications"
-    id = Column(Integer, primary_key=True, index=True)
-    event_type = Column(String, index=True)
-    data = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-# Создание таблицы уведомлений
-Base.metadata.create_all(bind=engine)
-
-# Функция для сохранения уведомления в базе данных
-def save_notification(event_type, data):
-    session = SessionLocal()
-    notification = Notification(event_type=event_type, data=json.dumps(data))
-    session.add(notification)
-    session.commit()
-    session.close()
-
-# Основной обработчик вебхуков
-@app.route("/webhook", methods=["POST"])
-def webhook_listener():
-    try:
-        # Получение данных из запроса
-        data = request.get_json()
-        event_type = data.get("action", "unknown_event")
-
-        # Сохранение данных в базу
-        save_notification(event_type, data)
-
-        return jsonify({"status": "success", "message": "Notification saved"}), 200
-
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# Инициализация бота
-bot = telebot.TeleBot(os.getenv("TELEGRAM_BOT_TOKEN"), skip_pending=True)
+from telebot import types, callback_data
+import time
+import threading
 
 # Глобальные переменные
-users_data = {}
+ID = 0
+users_data = {}  # Словарь для хранения данных пользователей
+# Инициализация бота
+bot = telebot.TeleBot(os.getenv("TELEGRAM_BOT_TOKEN"), skip_pending=True)
 
 # Функция для сохранения данных пользователей в файл .json
 def save_users_data():
@@ -75,39 +32,25 @@ def load_users_data():
 # Загрузка данных пользователей при старте бота
 load_users_data()
 
+
 # Обработчик команд /start и /hello
-@bot.message_handler(commands=['start', 'hello'])
+@bot.message_handler(commands=['start', 'hello '])
 def main(message):
     # Создаем виртуальную клавиатуру
-    markup = telebot.types.InlineKeyboardMarkup()
+    markup = types.InlineKeyboardMarkup()
 
     # Добавляем кнопки в виртуальную клавиатуру
-    btn1 = telebot.types.InlineKeyboardButton(f'👑 Фильтр уведомлений', callback_data='filter')
-    btn_stop = telebot.types.InlineKeyboardButton(f'🚫 Выключить уведомления', callback_data='stop')
+    btn1 = types.InlineKeyboardButton(f'👑 Фильтр уведомлений', callback_data='filter', parse_mode='HTML')  # Кнопка включить уведомления
+    btn_stop = types.InlineKeyboardButton(f'🚫 Выключить уведомления', callback_data='stop', parse_mode='HTML')
 
     # Добавляем строки в виртуальную клавиатуру
-    markup.row(btn1)
+    markup.row(btn1)  # Первая строка
     markup.row(btn_stop)
 
     # Отправляем начальное сообщение с виртуальной клавиатурой
     bot.send_message(message.chat.id,
                      f'Приветствую! Я ✨ <b>OpenProject Bot</b>✨, и я здесь для того, чтобы присылать тебе уведомления!',
                      parse_mode='HTML', reply_markup=markup)
-
-# Асинхронная функция для отправки уведомления
-async def send_notification(user_chat_id, message):
-    await bot.send_message(user_chat_id, message, parse_mode='HTML')
-
-# Асинхронная функция для обработки уведомлений
-async def process_notifications():
-    while True:
-        for user_id, data in users_data.items():
-            notifications = Backend.get_notifications_by_type(data['type_of_notification'])
-            for notification in notifications:
-                message_text = f"id: {notification['id']} event_type: {notification['event_type']} data: {notification['data']} created_at: {notification['created_at']}"
-                await send_notification(data['chat_id'], message_text)
-
-        await asyncio.sleep(10)
 
 # Обработчик для callback 'begin'
 @bot.callback_query_handler(func=lambda callback: callback.data == 'begin')
@@ -118,7 +61,8 @@ def begin(callback):
             'chat_id': chat_id,
             'type_of_notification': 'all'
         }
-        save_users_data()
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
         bot.send_message(callback.message.chat.id,
                          f'☑️ По умолчанию вам будут приходить <b>все</b> уведомления!',
                          parse_mode='HTML')
@@ -129,11 +73,11 @@ def begin(callback):
 def filter(callback):
     if callback.data == 'filter':
         bot.clear_step_handler_by_chat_id(chat_id=callback.message.chat.id)
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn3 = telebot.types.InlineKeyboardButton(f'🔔 Все уведомления', callback_data='all')
-        btn4 = telebot.types.InlineKeyboardButton(f'🗂 По типу', callback_data='type')
-        btn5 = telebot.types.InlineKeyboardButton(f'🔑 По id', callback_data='id')
-        btn6 = telebot.types.InlineKeyboardButton(f'🔙 Назад', callback_data='back')
+        markup = types.InlineKeyboardMarkup()
+        btn3 = types.InlineKeyboardButton(f'🔔 Все уведомления', callback_data='all', parse_mode='HTML')
+        btn4 = types.InlineKeyboardButton(f'🗂 По типу', callback_data='type', parse_mode='HTML')
+        btn5 = types.InlineKeyboardButton(f'🔑 По id', callback_data='id', parse_mode='HTML')
+        btn6 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='back', parse_mode='HTML')
 
         markup.row(btn3)
         markup.row(btn4, btn5)
@@ -145,8 +89,8 @@ def filter(callback):
 # Обработчик для callback 'stop'
 @bot.callback_query_handler(func=lambda callback: callback.data == 'stop')
 def stop(callback):
-    markup = telebot.types.InlineKeyboardMarkup()
-    btn_begin = telebot.types.InlineKeyboardButton(f'✅ Включить уведомления', callback_data='begin')
+    markup = types.InlineKeyboardMarkup()
+    btn_begin = types.InlineKeyboardButton(f'✅ Включить уведомления', callback_data='begin', parse_mode='HTML')
     markup.row(btn_begin)
 
     bot.send_message(callback.message.chat.id,
@@ -158,7 +102,8 @@ def stop(callback):
         'chat_id': chat_id,
         'type_of_notification': callback.data
     }
-    save_users_data()
+    with open("users_data.json", "w") as f:
+        json.dump(users_data, f)
 
 # Обработчик для callback 'all'
 @bot.callback_query_handler(func=lambda callback: callback.data == 'all')
@@ -169,9 +114,10 @@ def all(callback):
             'chat_id': chat_id,
             'type_of_notification': callback.data
         }
-        save_users_data()
-        markup = telebot.types.InlineKeyboardMarkup()
-        btn7 = telebot.types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter')
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
+        markup = types.InlineKeyboardMarkup()
+        btn7 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
 
         markup.row(btn7)
         bot.send_message(callback.message.chat.id,
@@ -179,13 +125,177 @@ def all(callback):
                          parse_mode='HTML', reply_markup=markup)
         bot.answer_callback_query(callback.id, text='Вам будут приходить все уведомления!')
 
-if __name__ == "__main__":
-    # Запуск асинхронной обработки уведомлений
-    loop = asyncio.get_event_loop()
-    loop.create_task(process_notifications())
+# Обработчик для callback 'type'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'type')
+def type(callback):
+    if callback.data == 'type':
+        markup = types.InlineKeyboardMarkup()
 
-    # Запуск бота
-    bot.polling(none_stop=True)
+        btn_type1 = types.InlineKeyboardButton(f'🔸 Task', callback_data='task', parse_mode='HTML')
+        btn_type2 = types.InlineKeyboardButton(f'🔹 Milestone', callback_data='milestone', parse_mode='HTML')
+        btn_type3 = types.InlineKeyboardButton(f'🔸 Phase', callback_data='phase', parse_mode='HTML')
+        btn8 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
 
-    # Запуск Flask-сервера
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+        markup.row(btn_type1)
+        markup.row(btn_type2)
+        markup.row(btn_type3)
+        markup.row(btn8)
+        bot.send_message(callback.message.chat.id,
+                         f'🗞 Выберите тип события, уведомления о котором вы хотите получать:',
+                         parse_mode='HTML', reply_markup=markup)
+
+# Обработчик для callback 'task'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'task')
+def task(callback):
+    if callback.data == 'task':
+        chat_id = callback.message.chat.id
+        users_data[callback.from_user.id] = {
+            'chat_id': chat_id,
+            'type_of_notification': 'task'
+        }
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
+        markup = types.InlineKeyboardMarkup()
+        btn11 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
+        markup.row(btn11)
+
+        bot.send_message(callback.message.chat.id,
+                         f'☑️ Вам будут приходить уведомления типа "Task"',
+                         parse_mode='HTML', reply_markup=markup)
+        bot.answer_callback_query(callback.id, text='Вам будут приходить уведомления типа <b>"Task"</b>')
+
+# Обработчик для callback 'milestone'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'milestone')
+def milestone(callback):
+    if callback.data == 'milestone':
+        chat_id = callback.message.chat.id
+        users_data[callback.from_user.id] = {
+            'chat_id': chat_id,
+            'type_of_notification': callback.data
+        }
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
+        markup = types.InlineKeyboardMarkup()
+        btn12 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
+        markup.row(btn12)
+
+        bot.send_message(callback.message.chat.id,
+                         f'☑️ Вам будут приходить уведомления типа "Milestone"',
+                         parse_mode='HTML', reply_markup=markup)
+        bot.answer_callback_query(callback.id, text='Вам будут приходить уведомления типа <b>"Milestone"</b>')
+
+# Обработчик для callback 'phase'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'phase')
+def phase(callback):
+    if callback.data == 'phase':
+        chat_id = callback.message.chat.id
+        users_data[callback.from_user.id] = {
+            'chat_id': chat_id,
+            'type_of_notification': callback.data
+        }
+        with open("users_data.json", "w") as f:
+            json.dump(users_data, f)
+        markup = types.InlineKeyboardMarkup()
+        btn13 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='type', parse_mode='HTML')
+        markup.row(btn13)
+
+        bot.send_message(callback.message.chat.id,
+                         f'☑️ Вам будут приходить уведомления типа "Phase"',
+                         parse_mode='HTML', reply_markup=markup)
+        bot.answer_callback_query(callback.id, text='Вам будут приходить уведомления типа <b>"Phase"</b>')
+
+# Обработчик для callback 'id'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'id')
+def id(callback):
+    if callback.data == 'id':
+        markup = types.InlineKeyboardMarkup()
+        btn9 = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
+        markup.row(btn9)
+
+        msg = bot.send_message(callback.message.chat.id,
+                             f'📌 Введите id уведомления, которое вы хотите вывести:',
+                             parse_mode='HTML', reply_markup=markup)
+        bot.answer_callback_query(callback.id, text="Пожалуйста, введите ID уведомления")
+
+        bot.register_next_step_handler(msg, handle_input)
+
+# Функция для обработки ввода ID
+def get_ID(callback):
+    global ID
+    ID = int(callback.text)
+
+# Обработчик для callback 'input'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'input')
+def handle_input(message):
+    if message.text.isdigit():
+        get_ID(message)
+        notification = Backend.get_notification_by_id(ID)
+
+        if notification:
+            markup = types.InlineKeyboardMarkup()
+            btn_b = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
+            markup.row(btn_b)
+            message_text = f'id: {notification.id} event_type: {notification.event_type} data: {json.loads(notification.data)} created_at: {notification.created_at}'
+            bot.send_message(message.from_user.id, message_text, parse_mode='HTML')
+
+        else:
+            markup = types.InlineKeyboardMarkup()
+            btn_b = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
+            markup.row(btn_b)
+
+            bot.send_message(message.from_user.id, "❗️ Такого уведомления не найдено", parse_mode='HTML', reply_markup=markup)
+            bot.register_next_step_handler(message, handle_input)
+
+    else:
+        markup = types.InlineKeyboardMarkup()
+        btn_b = types.InlineKeyboardButton(f'🔙 Назад', callback_data='filter', parse_mode='HTML')
+        markup.row(btn_b)
+
+        bot.send_message(message.from_user.id, "Пожалуйста, введите корректный ID уведомления", reply_markup=markup)
+        bot.register_next_step_handler(message, handle_input)
+
+# Обработчик для callback 'back'
+@bot.callback_query_handler(func=lambda callback: callback.data == 'back')
+def back(callback):
+    if callback.data == 'back':
+        main(callback.message)
+
+# Функция для периодической проверки данных и вывода уведомлений
+def periodic_check():
+    while True:
+        for user_id, data in users_data.items():
+            if data['type_of_notification'] == 'task':
+                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                for n in noti_arr:
+                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+
+            elif data['type_of_notification'] == 'milestone':
+                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                for n in noti_arr:
+                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+
+            elif data['type_of_notification'] == 'phase':
+                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                for n in noti_arr:
+                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+
+            elif data['type_of_notification'] == 'all':
+                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                for n in noti_arr:
+                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+            else:
+                pass
+        time.sleep(60)
+
+if __name__ == '__main__':
+    # Запуск потока для периодической проверки базы данных
+    thread = threading.Thread(target=periodic_check)
+    thread.daemon = True # Устанавливаем как демонный поток (завершается при выходе из программы)
+    thread.start()
+
+# Бесконечная обработка сообщений бота
+bot.infinity_polling(none_stop=True)
