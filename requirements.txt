@@ -6,3 +6,4 @@ telebot
 requests
 pyTelegramBotApi==4.23.0
 honcho
+asyncio

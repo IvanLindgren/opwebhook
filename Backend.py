@@ -35,6 +35,8 @@ def save_notification(event_type, data):
     session.commit()
     session.close()
 
+
+
 # Main webhook handler
 @app.route("/webhook", methods=["POST"])
 def webhook_listener():
@@ -45,9 +47,6 @@ def webhook_listener():
 
         # Save the data to the database
         save_notification(event_type, data)
-
-        # Отправляем уведомление сразу пользователям бота
-        bot.send_notification_to_users(event_type, data)
 
         return jsonify({"status": "success", "message": "Notification saved"}), 200
 
