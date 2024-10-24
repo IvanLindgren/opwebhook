@@ -68,7 +68,9 @@ def webhook_listener():
 
         # Отправляем сообщение пользователям
         for user_id, user_data in users.items():
-            bot.send_message(user_data['chat_id'], message_text, parse_mode='HTML')
+            chat_id = user_data.get("chat_id")
+            print(chat_id)
+            bot.send_message(chat_id, message_text, parse_mode='HTML')
 
         return jsonify({"status": "success", "message": "Notification saved"}), 200
     except Exception as e:
