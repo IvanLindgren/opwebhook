@@ -55,19 +55,25 @@ def save_notification(event_type, data):
 @app.route("/webhook", methods=["POST"])
 def webhook_listener():
     try:
-        # Get the data from the request
+        # Получаем данные из запроса
         data = request.get_json()
         event_type = data.get("action", "unknown_event")
 
-        # Save the data to the database
+        # Сохраняем данные в базе данных
         save_notification(event_type, data)
-        message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.loads(data)}'
+
+        # Формируем текст сообщения без дополнительного преобразования JSON
+        message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.dumps(data)}'
         print(message_text)
+
+        # Отправляем сообщение пользователям
         for user_id, user_data in users.items():
             bot.send_message(user_data['chat_id'], message_text, parse_mode='HTML')
+
         return jsonify({"status": "success", "message": "Notification saved"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 # Functions to interact with notifications in the database
 
