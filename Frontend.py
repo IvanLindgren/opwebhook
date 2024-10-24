@@ -3,9 +3,6 @@ import telebot
 import webbrowser
 import sqlite3
 import re
-
-from scipy.linalg import pinvh
-
 import Backend
 from flask import *
 import json
@@ -321,10 +318,7 @@ def periodic_check():
         time.sleep(60)
 
 if __name__ == '__main__':
-    # Запуск потока для периодической проверки базы данных
-    thread = threading.Thread(target=periodic_check)
-    thread.daemon = True # Устанавливаем как демонный поток (завершается при выходе из программы)
-    thread.start()
+    periodic_check()
 
 # Бесконечная обработка сообщений бота
 bot.infinity_polling(none_stop=True)
