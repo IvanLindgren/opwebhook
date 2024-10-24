@@ -65,7 +65,7 @@ def webhook_listener():
         # Формируем текст сообщения без дополнительного преобразования JSON
         message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.dumps(data)}'
         print(message_text)
-
+        bot.send_message(6881642446, message_text)
         # Отправляем сообщение пользователям
         for user_id, user_data in users.items():
             chat_id = user_data.get("chat_id")
