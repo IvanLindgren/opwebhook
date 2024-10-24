@@ -10,6 +10,7 @@ import os
 from telebot import types, callback_data
 import time
 import threading
+from telebot.apihelper import ApiTelegramException
 
 # Глобальные переменные
 ID = 0
@@ -277,32 +278,37 @@ def back(callback):
 # Функция для периодической проверки данных и вывода уведомлений
 def periodic_check():
     while True:
-        for user_id, data in users_data.items():
-            if data['type_of_notification'] == 'task':
-                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
-                for n in noti_arr:
-                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-
-            elif data['type_of_notification'] == 'milestone':
-                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
-                for n in noti_arr:
-                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-
-            elif data['type_of_notification'] == 'phase':
-                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
-                for n in noti_arr:
-                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-
-            elif data['type_of_notification'] == 'all':
-                noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
-                for n in noti_arr:
-                    message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
-                    bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
-            else:
-                pass
+        try:
+            for user_id, data in users_data.items():
+                if data['type_of_notification'] == 'task':
+                    noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                    for n in noti_arr:
+                        message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+    
+                elif data['type_of_notification'] == 'milestone':
+                    noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                    for n in noti_arr:
+                        message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+    
+                elif data['type_of_notification'] == 'phase':
+                    noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                    for n in noti_arr:
+                        message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+    
+                elif data['type_of_notification'] == 'all':
+                    noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
+                    for n in noti_arr:
+                        message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
+                else:
+                    pass
+        except ApiTelegramException as e:
+                print(f"Ошибка при отправке уведомлений: {str(e)}")
+        except Exception as e:
+            print(f"Непредвиденная ошибка: {str(e)}")
         time.sleep(60)
 
 if __name__ == '__main__':
