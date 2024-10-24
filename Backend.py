@@ -5,8 +5,6 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import json
 import os
-
-from Frontend import users_data
 from bot import bot
 
 app = Flask(__name__)
@@ -16,7 +14,21 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./notifications.db")
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
+users = {}
 
+def load_users_data():
+    global users
+    if os.path.exists('users_data.json'):
+        try:
+            with open('users_data.json', 'r') as f:
+                users = json.load(f)
+        except Exception:
+            # Если файл пустой или некорректен, оставляем пустой словарь
+            users = {}
+
+def save_users_data():
+    with open('users_data.json', 'w') as f:
+        json.dump(users, f)
 
 # Defining the model to store notifications
 class Notification(Base):
@@ -51,7 +63,7 @@ def webhook_listener():
         save_notification(event_type, data)
         message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.loads(data)}'
         print(message_text)
-        for user_id, user_data in users_data.items():
+        for user_id, user_data in users.items():
             bot.send_message(user_data['chat_id'], message_text, parse_mode='HTML')
         return jsonify({"status": "success", "message": "Notification saved"}), 200
     except Exception as e:
