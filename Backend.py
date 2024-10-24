@@ -46,7 +46,7 @@ def webhook_listener():
 
         # Save the data to the database
         save_notification(event_type, data)
-        bot.send_notification_to_users(event_type, data)
+
         return jsonify({"status": "success", "message": "Notification saved"}), 200
 
     except Exception as e:

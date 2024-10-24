@@ -12,6 +12,8 @@ import time
 import threading
 from telebot.apihelper import ApiTelegramException
 
+from Backend import get_all_notifications
+
 # Глобальные переменные
 ID = 0
 users_data = {}  # Словарь для хранения данных пользователей
@@ -312,6 +314,7 @@ def periodic_check():
         time.sleep(60)
 
 if __name__ == '__main__':
+    print(get_all_notifications())
     # Запуск потока для периодической проверки базы данных
     thread = threading.Thread(target=periodic_check)
     thread.daemon = True # Устанавливаем как демонный поток (завершается при выходе из программы)
