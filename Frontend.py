@@ -3,6 +3,9 @@ import telebot
 import webbrowser
 import sqlite3
 import re
+
+from scipy.linalg import pinvh
+
 import Backend
 from flask import *
 import json
@@ -286,24 +289,28 @@ def periodic_check():
                     noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
                     for n in noti_arr:
                         message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        print(message_text)
                         bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
     
                 elif data['type_of_notification'] == 'milestone':
                     noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
                     for n in noti_arr:
                         message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        print(message_text)
                         bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
     
                 elif data['type_of_notification'] == 'phase':
                     noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
                     for n in noti_arr:
                         message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        print(message_text)
                         bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
     
                 elif data['type_of_notification'] == 'all':
                     noti_arr = Backend.get_notifications_by_type(data['type_of_notification'])
                     for n in noti_arr:
                         message_text = f'id: {n.id} event_type: {n.event_type} data: {json.loads(n.data)} created_at: {n.created_at}'
+                        print(message_text)
                         bot.send_message(data['chat_id'], message_text, parse_mode='HTML')
                 else:
                     pass
@@ -314,7 +321,6 @@ def periodic_check():
         time.sleep(60)
 
 if __name__ == '__main__':
-    print(get_all_notifications())
     # Запуск потока для периодической проверки базы данных
     thread = threading.Thread(target=periodic_check)
     thread.daemon = True # Устанавливаем как демонный поток (завершается при выходе из программы)
