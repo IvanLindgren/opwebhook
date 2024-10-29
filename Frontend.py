@@ -15,6 +15,7 @@ def load_users_data():
     if os.path.exists('users.json'):
         with open('users.json', 'r') as f:
             users_data = json.load(f)
+            print(json.load(f))
     else:
         users_data = {}
 
