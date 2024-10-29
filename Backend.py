@@ -99,10 +99,16 @@ def webhook_listener():
         print(message_text)
         print(get_users())
         # Отправляем сообщение всем подписанным пользователям
+        # Отправляем сообщение всем подписанным пользователям
         users = get_all_users()
         for user in users:
             chat_id = user.chat_id
-            bot.send_message(chat_id, message_text, parse_mode='HTML')
+            print(f"Отправка сообщения пользователю с chat_id: {chat_id}")  # Проверка перед отправкой
+            try:
+                bot.send_message(chat_id, message_text, parse_mode='HTML')
+                print(f"Сообщение отправлено пользователю с chat_id: {chat_id}")
+            except Exception as e:
+                print(f"Ошибка отправки сообщения пользователю с chat_id {chat_id}: {str(e)}")
 
         return jsonify({"status": "success", "message": "Notification saved"}), 200
     except Exception as e:
