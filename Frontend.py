@@ -64,3 +64,5 @@ def stop(callback):
 def back(callback):
     bot.delete_message(callback.message.chat.id, callback.message.message_id)
     settings(callback.message)
+
+bot.infinity_polling(none_stop=True)
