@@ -8,6 +8,9 @@ from bot import bot  # импорт бота
 from telebot import types
 import os
 import json
+from sqlalchemy import BigInteger  # Импортируем BigInteger для поддержки больших значений
+
+
 
 app = Flask(__name__)
 
@@ -29,7 +32,7 @@ class Notification(Base):
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    chat_id = Column(Integer, unique=True, index=True)
+    chat_id = Column(BigInteger, unique=True, index=True)  # Используем BigInteger для больших значений
     type_of_notification = Column(String)
 
 # Создание таблиц
