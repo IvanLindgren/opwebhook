@@ -99,4 +99,6 @@ def webhook_listener():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
+    Base.metadata.drop_all(bind=engine)  # Удаляет все таблицы
+    Base.metadata.create_all(bind=engine)  # Пересоздает таблицы с обновленным типом
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
