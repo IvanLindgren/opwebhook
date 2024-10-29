@@ -29,11 +29,13 @@ class Notification(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 # Модель для пользователей
+# Модель для пользователей
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
-    chat_id = Column(BigInteger, unique=True, index=True)  # Используем BigInteger для больших значений
+    chat_id = Column(String, unique=True, index=True)  # Изменено на String для хранения значений chat_id как строки
     type_of_notification = Column(String)
+
 
 # Создание таблиц
 Base.metadata.create_all(bind=engine)
