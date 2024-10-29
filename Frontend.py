@@ -1,31 +1,8 @@
-# Импортируем необходимые библиотеки
+# frontend.py
 import telebot
-import os
-import json
 from telebot import types
-from bot import bot
-# Глобальные переменные
-ID = 0
-users_data = {}  # Словарь для хранения данных пользователей
-
-# Функции для работы с файлом users.json
-def load_users_data():
-    """Загрузка данных пользователей из файла users.json"""
-    global users_data
-    if os.path.exists('users.json'):
-        with open('users.json', 'r') as f:
-            users_data = json.load(f)
-            print(json.load(f))
-    else:
-        users_data = {}
-
-def save_users_data():
-    """Сохранение данных пользователей в файл users.json"""
-    with open('users.json', 'w') as f:
-        json.dump(users_data, f)
-
-# Инициализируем данные пользователей при запуске
-load_users_data()
+from bot import bot  # импорт бота из bot.py
+from Backend import add_user, remove_user  # импорт функций для работы с базой данных
 
 # Обработчик команд /start и /hello
 @bot.message_handler(commands=['start', 'hello'])
@@ -50,11 +27,7 @@ def settings(message):
 @bot.callback_query_handler(func=lambda callback: callback.data == 'all')
 def all(callback):
     chat_id = callback.message.chat.id
-    users_data[callback.from_user.id] = {
-        'chat_id': chat_id,
-        'type_of_notification': callback.data
-    }
-    save_users_data()  # Сохраняем данные пользователя при подписке
+    add_user(chat_id, 'all')  # Добавляем пользователя в базу данных
 
     markup = types.InlineKeyboardMarkup()
     btn_back = types.InlineKeyboardButton('🔙 Назад', callback_data='back')
@@ -72,9 +45,7 @@ def all(callback):
 @bot.callback_query_handler(func=lambda callback: callback.data == 'stop')
 def stop(callback):
     chat_id = callback.message.chat.id
-    if callback.from_user.id in users_data:
-        del users_data[callback.from_user.id]  # Удаляем пользователя при отписке
-        save_users_data()  # Сохраняем изменения в файл
+    remove_user(chat_id)  # Удаляем пользователя из базы данных
 
     markup = types.InlineKeyboardMarkup()
     btn_back = types.InlineKeyboardButton('🔙 Назад', callback_data='back')
@@ -93,4 +64,3 @@ def stop(callback):
 def back(callback):
     bot.delete_message(callback.message.chat.id, callback.message.message_id)
     settings(callback.message)
-
