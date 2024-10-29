@@ -51,6 +51,7 @@ def get_all_users():
 
 
 def add_user(chat_id, type_of_notification):
+    chat_id = str(chat_id)  # Преобразуем chat_id в строку перед использованием
     session = SessionLocal()
     user = session.query(User).filter(User.chat_id == chat_id).first()
     if user:
@@ -62,12 +63,14 @@ def add_user(chat_id, type_of_notification):
     session.close()
 
 def remove_user(chat_id):
+    chat_id = str(chat_id)  # Преобразуем chat_id в строку перед использованием
     session = SessionLocal()
     user = session.query(User).filter(User.chat_id == chat_id).first()
     if user:
         session.delete(user)
         session.commit()
     session.close()
+
 
 def get_users():
     session = SessionLocal()
