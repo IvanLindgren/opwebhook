@@ -15,7 +15,7 @@ from sqlalchemy import BigInteger  # Импортируем BigInteger для п
 app = Flask(__name__)
 
 # Настройка базы данных (например, PostgreSQL для Render)
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./notifications.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://openproject_954q_user:oJCye7I1hJF1okenfXTbLt8bNMDCHgfg@dpg-csgbf6lumphs73b2lk30-a/openproject_954q")
 engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
@@ -99,16 +99,20 @@ def webhook_listener():
         print(message_text)
         print(get_users())
         # Отправляем сообщение всем подписанным пользователям
+        # Отправляем сообщение всем подписанным пользователям
         users = get_all_users()
         for user in users:
             chat_id = user.chat_id
-            bot.send_message(chat_id, message_text, parse_mode='HTML')
+            print(f"Отправка сообщения пользователю с chat_id: {chat_id}")  # Проверка перед отправкой
+            try:
+                bot.send_message(chat_id, message_text, parse_mode='HTML')
+                print(f"Сообщение отправлено пользователю с chat_id: {chat_id}")
+            except Exception as e:
+                print(f"Ошибка отправки сообщения пользователю с chat_id {chat_id}: {str(e)}")
 
         return jsonify({"status": "success", "message": "Notification saved"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
-    Base.metadata.drop_all(bind=engine)  # Удаляет все таблицы
-    Base.metadata.create_all(bind=engine)  # Пересоздает таблицы с обновленным типом
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
