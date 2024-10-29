@@ -2,8 +2,8 @@ import requests
 
 url = "https://opwebhook.onrender.com/webhook"
 data = {
-    "action": "Жопа",
-    "message": "вика привет"
+    "action": "test",
+    "message": "test"
 }
 
 response = requests.post(url, json=data)
