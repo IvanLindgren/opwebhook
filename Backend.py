@@ -42,6 +42,14 @@ Base.metadata.create_all(bind=engine)
 
 # Функции для работы с пользователями в базе данных
 
+def get_all_users():
+    session = SessionLocal()
+    users = session.query(User).all()
+    print("Список пользователей:", users)  # Временно выводим список пользователей для проверки
+    session.close()
+    return users
+
+
 def add_user(chat_id, type_of_notification):
     session = SessionLocal()
     user = session.query(User).filter(User.chat_id == chat_id).first()
@@ -61,7 +69,7 @@ def remove_user(chat_id):
         session.commit()
     session.close()
 
-def get_all_users():
+def get_users():
     session = SessionLocal()
     users = session.query(User).all()
     session.close()
@@ -89,7 +97,7 @@ def webhook_listener():
         # Формируем текст сообщения
         message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.dumps(data)}'
         print(message_text)
-
+        print(get_users())
         # Отправляем сообщение всем подписанным пользователям
         users = get_all_users()
         for user in users:
