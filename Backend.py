@@ -15,7 +15,6 @@ engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 users = {}
-
 def load_users_data():
     global users
     if os.path.exists('users_data.json'):
@@ -25,6 +24,7 @@ def load_users_data():
         except Exception:
             # Если файл пустой или некорректен, оставляем пустой словарь
             users = {}
+load_users_data()
 
 def save_users_data():
     with open('users_data.json', 'w') as f:
