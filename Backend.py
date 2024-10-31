@@ -98,7 +98,7 @@ def webhook_listener():
         save_notification(event_type, data)
 
         # Формируем текст сообщения
-        message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.dumps(data)}'
+        message_text = f'Получено уведомление. Событие: {event_type}. Информация: {json.dumps(data)}'.replace("{", "").replace("}", "").replace('"', "")
         print(message_text)
         print(get_users())
         # Отправляем сообщение всем подписанным пользователям
